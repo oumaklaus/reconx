@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE nmaprun>
+<nmaprun scanner="nmap" args="nmap -sV -sC -O -oX scan.xml 10.10.14.0/24" start="1714300800" version="7.94">
+  <host starttime="1714300801" endtime="1714300815">
+    <status state="up" reason="echo-reply"/>
+    <address addr="10.10.14.10" addrtype="ipv4"/>
+    <address addr="AA:BB:CC:DD:EE:01" addrtype="mac" vendor="VMware"/>
+    <hostnames>
+      <hostname name="web-01.lab.local" type="PTR"/>
+    </hostnames>
+    <ports>
+      <port protocol="tcp" portid="22">
+        <state state="open" reason="syn-ack"/>
+        <service name="ssh" product="OpenSSH" version="8.9p1" extrainfo="Ubuntu Linux; protocol 2.0" ostype="Linux" method="probed" conf="10">
+          <cpe>cpe:/a:openbsd:openssh:8.9p1</cpe>
+        </service>
+      </port>
+      <port protocol="tcp" portid="80">
+        <state state="open" reason="syn-ack"/>
+        <service name="http" product="nginx" version="1.24.0" method="probed" conf="10">
+          <cpe>cpe:/a:nginx:nginx:1.24.0</cpe>
+        </service>
+      </port>
+      <port protocol="tcp" portid="443">
+        <state state="open" reason="syn-ack"/>
+        <service name="ssl/http" product="nginx" version="1.24.0" extrainfo="OpenSSL/3.0.2" method="probed" conf="10">
+          <cpe>cpe:/a:nginx:nginx:1.24.0</cpe>
+        </service>
+      </port>
+      <port protocol="tcp" portid="3306">
+        <state state="filtered" reason="no-response"/>
+        <service name="mysql" method="table" conf="3"/>
+      </port>
+    </ports>
+    <os>
+      <osmatch name="Linux 5.4 - 5.15" accuracy="95"/>
+    </os>
+  </host>
+
+  <host starttime="1714300802" endtime="1714300818">
+    <status state="up" reason="echo-reply"/>
+    <address addr="10.10.14.20" addrtype="ipv4"/>
+    <address addr="AA:BB:CC:DD:EE:02" addrtype="mac" vendor="VMware"/>
+    <hostnames>
+      <hostname name="api-01.lab.local" type="PTR"/>
+    </hostnames>
+    <ports>
+      <port protocol="tcp" portid="22">
+        <state state="open" reason="syn-ack"/>
+        <service name="ssh" product="OpenSSH" version="7.6p1" extrainfo="Ubuntu 4ubuntu0.7; protocol 2.0" method="probed" conf="10">
+          <cpe>cpe:/a:openbsd:openssh:7.6p1</cpe>
+        </service>
+      </port>
+      <port protocol="tcp" portid="8080">
+        <state state="open" reason="syn-ack"/>
+        <service name="http" product="Apache Tomcat" version="9.0.65" method="probed" conf="10">
+          <cpe>cpe:/a:apache:tomcat:9.0.65</cpe>
+        </service>
+      </port>
+      <port protocol="tcp" portid="5432">
+        <state state="open" reason="syn-ack"/>
+        <service name="postgresql" product="PostgreSQL" version="14.5" method="probed" conf="10">
+          <cpe>cpe:/a:postgresql:postgresql:14.5</cpe>
+        </service>
+      </port>
+    </ports>
+    <os>
+      <osmatch name="Linux 5.4 - 5.15" accuracy="92"/>
+    </os>
+  </host>
+
+  <host starttime="1714300803" endtime="1714300816">
+    <status state="up" reason="echo-reply"/>
+    <address addr="10.10.14.30" addrtype="ipv4"/>
+    <hostnames>
+      <hostname name="mail.lab.local" type="PTR"/>
+    </hostnames>
+    <ports>
+      <port protocol="tcp" portid="25">
+        <state state="open" reason="syn-ack"/>
+        <service name="smtp" product="Postfix" method="probed" conf="10"/>
+      </port>
+      <port protocol="tcp" portid="143">
+        <state state="open" reason="syn-ack"/>
+        <service name="imap" product="Dovecot" version="2.3.19" method="probed" conf="10"/>
+      </port>
+      <port protocol="tcp" portid="993">
+        <state state="open" reason="syn-ack"/>
+        <service name="imaps" product="Dovecot" version="2.3.19" extrainfo="OpenSSL/1.1.1" method="probed" conf="10"/>
+      </port>
+    </ports>
+  </host>
+
+  <host starttime="1714300804" endtime="1714300820">
+    <status state="down" reason="no-response"/>
+    <address addr="10.10.14.99" addrtype="ipv4"/>
+  </host>
+</nmaprun>

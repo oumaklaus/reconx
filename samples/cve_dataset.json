@@ -1,0 +1,83 @@
+[
+  {
+    "cve_id": "CVE-2023-44487",
+    "product": "nginx",
+    "version_pattern": "1.*",
+    "severity": "high",
+    "description": "HTTP/2 Rapid Reset attack allows denial of service via quick stream reset. Affects nginx built with ngx_http_v2_module.",
+    "references": ["https://nvd.nist.gov/vuln/detail/CVE-2023-44487"],
+    "cpe": ["cpe:2.3:a:nginx:nginx:*:*:*:*:*:*:*:*"]
+  },
+  {
+    "cve_id": "CVE-2024-24989",
+    "product": "nginx",
+    "version_pattern": "^1\\.25\\.[0-3]$",
+    "severity": "high",
+    "description": "When configured with HTTP/3, nginx worker process may be terminated by a specially crafted QUIC session.",
+    "references": ["https://nvd.nist.gov/vuln/detail/CVE-2024-24989"],
+    "cpe": ["cpe:2.3:a:nginx:nginx:*:*:*:*:*:*:*:*"]
+  },
+  {
+    "cve_id": "CVE-2023-46589",
+    "product": "apache tomcat",
+    "version_pattern": "9.*",
+    "severity": "critical",
+    "description": "Improper input validation in Apache Tomcat allows request smuggling via malformed trailer headers.",
+    "references": ["https://nvd.nist.gov/vuln/detail/CVE-2023-46589"],
+    "cpe": ["cpe:2.3:a:apache:tomcat:*:*:*:*:*:*:*:*"]
+  },
+  {
+    "cve_id": "CVE-2024-23672",
+    "product": "apache tomcat",
+    "version_pattern": "9.*",
+    "severity": "high",
+    "description": "Denial of service via incomplete cleanup when processing HTTP/2 requests in Apache Tomcat.",
+    "references": ["https://nvd.nist.gov/vuln/detail/CVE-2024-23672"],
+    "cpe": ["cpe:2.3:a:apache:tomcat:*:*:*:*:*:*:*:*"]
+  },
+  {
+    "cve_id": "CVE-2023-48795",
+    "product": "openssh",
+    "version_pattern": "^[0-8]\\.",
+    "severity": "medium",
+    "description": "Terrapin attack: SSH transport protocol prefix truncation weakness allows MITM attacker to downgrade connection security.",
+    "references": ["https://nvd.nist.gov/vuln/detail/CVE-2023-48795", "https://terrapin-attack.com"],
+    "cpe": ["cpe:2.3:a:openbsd:openssh:*:*:*:*:*:*:*:*"]
+  },
+  {
+    "cve_id": "CVE-2023-51385",
+    "product": "openssh",
+    "version_pattern": "^[0-9]\\.[0-5]",
+    "severity": "medium",
+    "description": "OS command injection in ssh when processing ProxyCommand or ProxyJump hostnames with shell metacharacters.",
+    "references": ["https://nvd.nist.gov/vuln/detail/CVE-2023-51385"],
+    "cpe": ["cpe:2.3:a:openbsd:openssh:*:*:*:*:*:*:*:*"]
+  },
+  {
+    "cve_id": "CVE-2023-5072",
+    "product": "postgresql",
+    "version_pattern": "14.*",
+    "severity": "medium",
+    "description": "Memory disclosure when error messages reference certain system catalog columns.",
+    "references": ["https://nvd.nist.gov/vuln/detail/CVE-2023-5072"],
+    "cpe": ["cpe:2.3:a:postgresql:postgresql:*:*:*:*:*:*:*:*"]
+  },
+  {
+    "cve_id": "CVE-2022-3602",
+    "product": "openssl",
+    "version_pattern": "3.0.*",
+    "severity": "high",
+    "description": "Buffer overrun in X.509 certificate verification during name constraint checking.",
+    "references": ["https://nvd.nist.gov/vuln/detail/CVE-2022-3602"],
+    "cpe": ["cpe:2.3:a:openssl:openssl:*:*:*:*:*:*:*:*"]
+  },
+  {
+    "cve_id": "CVE-2023-45853",
+    "product": "dovecot",
+    "version_pattern": "2.3.*",
+    "severity": "medium",
+    "description": "Privilege escalation through IMAP hibernation when specific configurations are active.",
+    "references": ["https://nvd.nist.gov/vuln/detail/CVE-2023-45853"],
+    "cpe": ["cpe:2.3:a:dovecot:dovecot:*:*:*:*:*:*:*:*"]
+  }
+]
