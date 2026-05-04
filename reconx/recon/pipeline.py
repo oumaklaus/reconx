@@ -309,6 +309,8 @@ class ReconPipeline:
         from reconx.runners.ffuf_runner import FfufRunner
         runner = FfufRunner(self.workspace)
 
+        # Build list of base URLs to enumerate: primary target + subdomains
+        targets: list[tuple[str, int]] = []  # (base_url, port)
         for port in r.web_ports:
             scheme = "https" if port in SSL_PORTS else "http"
             base = f"{scheme}://{self.target.value}" if port in (80, 443) else f"{scheme}://{self.target.value}:{port}"
@@ -318,6 +320,16 @@ class ReconPipeline:
                 domain = r.discovered_domains[0]
                 base = f"{scheme}://{domain}" if port in (80, 443) else f"{scheme}://{domain}:{port}"
 
+            targets.append((base, port))
+
+        # Also enumerate directories on discovered subdomains
+        for sub in r.subdomains:
+            for port in r.web_ports:
+                scheme = "https" if port in SSL_PORTS else "http"
+                base = f"{scheme}://{sub}" if port in (80, 443) else f"{scheme}://{sub}:{port}"
+                targets.append((base, port))
+
+        for base, port in targets:
             self._header("FFUF", f"Directory Enum → {base}")
             run = runner.run_live(self.target.value, timeout=300, console=self.c,
                 line_filter=self._ffuf_result_filter,
@@ -338,8 +350,17 @@ class ReconPipeline:
         self._header("NUCLEI", "Vulnerability Scanning")
         from reconx.runners.nuclei_runner import NucleiRunner
         runner = NucleiRunner(self.workspace)
-        targets = r.web_urls + [self.target.value]
-        cmd = runner.build_command_with_urls(targets, self.target.value) if r.web_urls else runner.build_command(self.target.value)
+
+        # Build comprehensive target list: web URLs + raw target + subdomain URLs
+        targets = list(r.web_urls) + [self.target.value]
+        for sub in r.subdomains:
+            for port in r.web_ports:
+                scheme = "https" if port in SSL_PORTS else "http"
+                url = f"{scheme}://{sub}" if port in (80, 443) else f"{scheme}://{sub}:{port}"
+                if url not in targets:
+                    targets.append(url)
+
+        cmd = runner.build_command_with_urls(targets, self.target.value) if len(targets) > 1 else runner.build_command(self.target.value)
         out = runner.output_file(self.target.value)
 
         def nuc_filt(l):
@@ -567,6 +588,56 @@ class ReconPipeline:
         except Exception:
             pass
         return sorted(techs)
+
+    def _parse_nuclei_findings(self, path: Path) -> list[dict]:
+        """Parse nuclei JSONL output into structured findings."""
+        findings = []
+        try:
+            for line in path.read_text().splitlines():
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    data = json.loads(line)
+                    findings.append({
+                        "name": data.get("info", {}).get("name", data.get("template-id", "unknown")),
+                        "severity": data.get("info", {}).get("severity", "info"),
+                        "host": data.get("host", data.get("matched-at", "")),
+                        "matched_at": data.get("matched-at", ""),
+                        "template_id": data.get("template-id", ""),
+                        "type": data.get("type", ""),
+                        "description": data.get("info", {}).get("description", ""),
+                    })
+                except (json.JSONDecodeError, KeyError):
+                    continue
+        except Exception:
+            pass
+        return findings
+
+    def _parse_nikto_findings(self, path: Path) -> list[str]:
+        """Parse nikto text output into a list of finding summaries."""
+        findings = []
+        try:
+            for line in path.read_text().splitlines():
+                line = line.strip()
+                if not line:
+                    continue
+                # Nikto findings start with '+'
+                if line.startswith("+"):
+                    # Skip banner lines like "+ Target IP:" and "+ Start Time:"
+                    if any(line.startswith(f"+ {k}") for k in (
+                        "Target IP", "Target Hostname", "Target Port",
+                        "Start Time", "End Time", "SSL Info",
+                        "Server:", "-----------",
+                    )):
+                        continue
+                    # Strip the leading '+ ' prefix
+                    finding = line.lstrip("+ ").strip()
+                    if finding:
+                        findings.append(finding)
+        except Exception:
+            pass
+        return findings
 
     # ── Output ────────────────────────────────────────────────────────────
 
