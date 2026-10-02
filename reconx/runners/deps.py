@@ -1,7 +1,8 @@
 """Dependency checker and auto-installer for external tools.
 
 Checks if required tools and wordlists exist on the system.
-Installs missing ones via apt, go install, or direct download.
+Installs missing ones via the system package manager (pacman/apt/dnf/zypper/
+brew), `go install`, or direct download — whichever fits the host.
 """
 
 from __future__ import annotations
@@ -62,14 +63,17 @@ TOOLS: dict[str, dict] = {
     "httpx": {
         "check": "httpx-toolkit", "alt_check": "httpx",
         "install_apt": "httpx-toolkit",
+        "install_go": "github.com/projectdiscovery/httpx/cmd/httpx@latest",
         "version_flag": "-version", "required": True,
     },
     "ffuf": {
         "check": "ffuf", "install_apt": "ffuf",
+        "install_go": "github.com/ffuf/ffuf/v2@latest",
         "version_flag": "-V", "required": True,
     },
     "nuclei": {
         "check": "nuclei", "install_apt": "nuclei",
+        "install_go": "github.com/projectdiscovery/nuclei/v3/cmd/nuclei@latest",
         "version_flag": "-version", "required": True,
     },
     # ── Web Enum ──────────────────────────────────────────────────────────
@@ -96,6 +100,7 @@ TOOLS: dict[str, dict] = {
     },
     "subfinder": {
         "check": "subfinder", "install_apt": "subfinder",
+        "install_go": "github.com/projectdiscovery/subfinder/v2/cmd/subfinder@latest",
         "version_flag": "-version", "required": False,
     },
     # ── SSL ────────────────────────────────────────────────────────────────
@@ -112,6 +117,7 @@ TOOLS: dict[str, dict] = {
     # ── Screenshot ─────────────────────────────────────────────────────────
     "gowitness": {
         "check": "gowitness", "install_apt": "gowitness",
+        "install_go": "github.com/sensepost/gowitness@latest",
         "version_flag": "version", "required": False,
     },
 }
@@ -201,34 +207,83 @@ def check_all() -> DepsReport:
     )
 
 
-def _run_install(cmd: list[str], desc: str) -> bool:
+PKG_INSTALLERS: list[tuple[str, list[str], str]] = [
+    # (probe binary, install-command prefix, TOOLS pkg-name key)
+    # AUR helpers first on Arch — they escalate privileges themselves.
+    ("yay", ["yay", "-S", "--needed", "--noconfirm"], "pacman"),
+    ("paru", ["paru", "-S", "--needed", "--noconfirm"], "pacman"),
+    ("pacman", ["sudo", "pacman", "-S", "--needed", "--noconfirm"], "pacman"),
+    ("apt-get", ["sudo", "apt-get", "install", "-y"], "apt"),
+    ("dnf", ["sudo", "dnf", "install", "-y"], "dnf"),
+    ("zypper", ["sudo", "zypper", "install", "-y"], "zypper"),
+    ("brew", ["brew", "install"], "brew"),
+]
+
+
+def _detect_installer() -> tuple[list[str], str] | None:
+    """Return (install-command prefix, TOOLS pkg-name key) for this host."""
+    for probe, prefix, key in PKG_INSTALLERS:
+        if shutil.which(probe):
+            return prefix, key
+    return None
+
+
+def _run_install(cmd: list[str], desc: str, env: dict[str, str] | None = None) -> bool:
     logger.info("Installing %s: %s", desc, " ".join(cmd))
     try:
-        result = subprocess.run(cmd, capture_output=True, text=True, timeout=300)
+        # Inherit the terminal so sudo / AUR helpers can prompt for a password.
+        result = subprocess.run(cmd, timeout=900, env=env)
         if result.returncode == 0:
             logger.info("✓ Installed %s", desc)
             return True
-        logger.error("✗ Failed: %s", result.stderr[:200])
+        logger.error("✗ Failed (exit %s): %s", result.returncode, " ".join(cmd))
         return False
     except (subprocess.TimeoutExpired, Exception) as e:
         logger.error("✗ Error installing %s: %s", desc, e)
         return False
 
 
+def _run_go_install(module: str, desc: str) -> bool:
+    """Install a Go-based tool into ~/.local/bin (no root required)."""
+    gobin = os.path.expanduser("~/.local/bin")
+    os.makedirs(gobin, exist_ok=True)
+    return _run_install(["go", "install", module], f"{desc} (go)",
+                        env={**os.environ, "GOBIN": gobin})
+
+
 def install_tool(name: str) -> bool:
-    """Install a missing tool via apt."""
+    """Install a missing tool using whatever the host provides.
+
+    Order: `go install` for Go-based tools (userspace, needs no root), then
+    the system package manager (pacman/AUR, apt, dnf, zypper, brew).
+    """
     info = TOOLS.get(name)
     if not info:
         return False
-    apt_pkg = info.get("install_apt")
-    if apt_pkg:
-        return _run_install(["sudo", "apt-get", "install", "-y", apt_pkg], name)
+
+    # 1. Go-based tools: fast, cross-distro, and no root needed.
+    go_mod = info.get("install_go")
+    if go_mod and shutil.which("go") and _run_go_install(go_mod, name):
+        return True
+
+    # 2. System package manager.
+    installer = _detect_installer()
+    if installer:
+        prefix, key = installer
+        pkg = info.get(f"install_{key}") or info.get("install_apt")
+        if pkg and _run_install([*prefix, pkg], name):
+            return True
+
+    logger.error("✗ No installer could provide %s — install it manually", name)
     return False
 
 
 def install_seclists() -> bool:
-    if _run_install(["sudo", "apt-get", "install", "-y", "seclists"], "seclists"):
-        return True
+    installer = _detect_installer()
+    if installer:
+        prefix, _key = installer
+        if _run_install([*prefix, "seclists"], "seclists"):
+            return True
     dest = os.path.expanduser("~/.reconx/wordlists/seclists")
     if os.path.isdir(dest):
         return True
